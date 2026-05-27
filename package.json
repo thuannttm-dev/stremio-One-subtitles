@@ -3,12 +3,16 @@
 	"version": "0.0.1",
 	"description": "Double subtitles for Stremio",
 	"scripts": {
-		"start": "node server.js"
+		"start": "node server.js",
+		"test": "mocha"
 	},
 	"dependencies": {
 		"express": "^5.2.1",
 		"googletrans": "^1.0.28",
 		"stremio-addon-sdk": "1.1.x",
 		"subtitle": "^4.2.2"
+	},
+	"devDependencies": {
+		"mocha": "^11.7.6"
 	}
 }
