@@ -1,45 +1,45 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Double Subtitles</title>
-    <link rel="stylesheet" href="/assets/styles.css" />
-    <script defer src="/assets/config.js"></script>
-  </head>
-  <body>
-    <main class="shell">
-      <section class="panel">
-        <header>
-          <p class="eyebrow">Stremio subtitle addon</p>
-          <h1>Double Subtitles</h1>
-          <p class="summary">
-            Choose a subtitle source language, translate it into your target language, then install the configured addon
-            in Stremio.
-          </p>
-        </header>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Double Subtitles</title>
+        <link rel="stylesheet" href="/assets/styles.css" />
+        <script defer src="/assets/config.js"></script>
+    </head>
+    <body>
+        <main class="shell">
+            <section class="panel">
+                <header>
+                    <p class="eyebrow">Stremio subtitle addon</p>
+                    <h1>Double Subtitles</h1>
+                    <p class="summary">
+                        Choose a subtitle source language, translate it into your target language, then install the
+                        configured addon in Stremio.
+                    </p>
+                </header>
 
-        <form id="configForm" class="config-form">
-          <label>
-            <span>Source subtitles</span>
-            <select id="sourceLang" name="sourceLang">
-              {{sourceOptions}}
-            </select>
-          </label>
-          <label>
-            <span>Translate to</span>
-            <select id="targetLang" name="targetLang">
-              {{targetOptions}}
-            </select>
-          </label>
-          <button type="submit">Install configured addon</button>
-        </form>
+                <form id="configForm" class="config-form">
+                    <label>
+                        <span>Source subtitles</span>
+                        <select id="sourceLang" name="sourceLang">
+                            {{sourceOptions}}
+                        </select>
+                    </label>
+                    <label>
+                        <span>Translate to</span>
+                        <select id="targetLang" name="targetLang">
+                            {{targetOptions}}
+                        </select>
+                    </label>
+                    <button type="submit">Install configured addon</button>
+                </form>
 
-        <div class="manifest">
-          <span>Manifest URL</span>
-          <a id="manifestLink" href="#"></a>
-        </div>
-      </section>
-    </main>
-  </body>
+                <div class="manifest">
+                    <span>Manifest URL</span>
+                    <a id="manifestLink" href="#"></a>
+                </div>
+            </section>
+        </main>
+    </body>
 </html>
