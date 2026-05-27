@@ -2,11 +2,11 @@ const crypto = require("crypto");
 const { getSubtitleConfig } = require("./lib/config");
 const { fetchText } = require("./lib/http-client");
 const { normalizeStremioLanguage } = require("./lib/languages");
+const { getPublicBaseUrl } = require("./lib/public-url");
 const { composeVtt, parseSubtitleCues } = require("./lib/subtitle-parser");
 const { searchPublicStremioOpenSubtitles } = require("./lib/stremio-subtitles");
 const { translateCues } = require("./lib/translator");
 
-const DEFAULT_PORT = process.env.PORT || "53100";
 const RESULT_LIMIT = Number(process.env.SUBTITLE_RESULT_LIMIT || 3);
 const jobs = new Map();
 
@@ -76,7 +76,7 @@ function createSubtitleOption(args, subtitle, config) {
 
     return {
         id: `opensubtitles-v3-${subtitle.id}-to-${config.stremioTargetLanguage}`,
-        url: `${getBaseUrl()}/generated-subtitles/${key}.vtt`,
+        url: `${getPublicBaseUrl()}/generated-subtitles/${key}.vtt`,
         lang: config.stremioTargetLanguage,
     };
 }
@@ -85,6 +85,7 @@ async function buildTranslatedVtt(job) {
     const config = getSubtitleConfig(job.config);
     console.log(`Downloading subtitle ${job.subtitleUrl}`);
     const subtitleText = await fetchText(job.subtitleUrl);
+
     const cues = parseSubtitleCues(subtitleText);
 
     if (!cues.length) {
@@ -95,11 +96,8 @@ async function buildTranslatedVtt(job) {
         `Translating ${cues.length} cues from ${config.googleSourceLanguage} to ${config.googleTargetLanguage}`,
     );
     const translations = await translateCues(cues, config);
-    return composeVtt(cues, translations);
-}
-
-function getBaseUrl() {
-    return process.env.ADDON_BASE_URL || `http://127.0.0.1:${DEFAULT_PORT}`;
+    const vtt = composeVtt(cues, translations);
+    return vtt;
 }
 
 function hashKey(value) {

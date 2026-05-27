@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "express": "^5.2.1",
+        "express-rate-limit": "^8.5.2",
         "googletrans": "^1.0.28",
         "stremio-addon-sdk": "1.1.x",
         "subtitle": "^4.2.2"

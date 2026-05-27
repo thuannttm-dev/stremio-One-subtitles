@@ -4,7 +4,17 @@ async function getJson(url) {
     return JSON.parse(await getText(url));
 }
 
-function getText(url) {
+async function getText(url) {
+    const response = await getResponse(url);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw new Error(`${response.statusCode}: ${response.body}`);
+    }
+
+    return response.body;
+}
+
+function getResponse(url) {
     return new Promise((resolve, reject) => {
         http.get(url, (response) => {
             let body = "";
@@ -14,12 +24,11 @@ function getText(url) {
                 body += chunk;
             });
             response.on("end", () => {
-                if (response.statusCode < 200 || response.statusCode >= 300) {
-                    reject(new Error(`${response.statusCode}: ${body}`));
-                    return;
-                }
-
-                resolve(body);
+                resolve({
+                    body,
+                    headers: response.headers,
+                    statusCode: response.statusCode,
+                });
             });
         }).on("error", reject);
     });
@@ -27,5 +36,6 @@ function getText(url) {
 
 module.exports = {
     getJson,
+    getResponse,
     getText,
 };

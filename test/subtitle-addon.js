@@ -1,6 +1,6 @@
 const assert = require("assert");
 const { once } = require("events");
-const { getJson, getText } = require("./helpers/http");
+const { getJson, getResponse, getText } = require("./helpers/http");
 
 describe("live configured subtitle addon", function () {
     let server;
@@ -34,6 +34,36 @@ describe("live configured subtitle addon", function () {
         const portugueseManifest = await getJson(`${baseUrl}/configure/de/pt-BR/manifest.json`);
         assert.equal(portugueseManifest.name, "double-subtitles de->pt-BR");
         assert.match(portugueseManifest.description, /de subtitles with pt-BR translation/);
+    });
+
+    it("rate limits repeated requests", async function () {
+        const previousEnabled = process.env.RATE_LIMIT_ENABLED;
+        const previousMax = process.env.RATE_LIMIT_MAX;
+        const previousWindowMs = process.env.RATE_LIMIT_WINDOW_MS;
+        const { createApp } = require("../server");
+        let rateLimitedServer;
+
+        process.env.RATE_LIMIT_ENABLED = "true";
+        process.env.RATE_LIMIT_MAX = "1";
+        process.env.RATE_LIMIT_WINDOW_MS = "60000";
+
+        try {
+            rateLimitedServer = createApp().listen(0, "127.0.0.1");
+            await once(rateLimitedServer, "listening");
+            const rateLimitedBaseUrl = `http://127.0.0.1:${rateLimitedServer.address().port}`;
+
+            assert.equal((await getResponse(`${rateLimitedBaseUrl}/`)).statusCode, 200);
+            assert.equal((await getResponse(`${rateLimitedBaseUrl}/`)).statusCode, 429);
+        } finally {
+            restoreEnv("RATE_LIMIT_ENABLED", previousEnabled);
+            restoreEnv("RATE_LIMIT_MAX", previousMax);
+            restoreEnv("RATE_LIMIT_WINDOW_MS", previousWindowMs);
+
+            if (rateLimitedServer) {
+                rateLimitedServer.close();
+                await once(rateLimitedServer, "close");
+            }
+        }
     });
 
     it("maps configured target language to Stremio subtitle language code", async function () {
@@ -71,3 +101,12 @@ describe("live configured subtitle addon", function () {
         assert.equal(cachedVtt, generatedVtt);
     });
 });
+
+function restoreEnv(name, value) {
+    if (value === undefined) {
+        delete process.env[name];
+        return;
+    }
+
+    process.env[name] = value;
+}

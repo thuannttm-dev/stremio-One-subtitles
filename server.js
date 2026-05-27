@@ -5,6 +5,8 @@ const express = require("express");
 const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const { createAddonInterface } = require("./addon");
+const { getDisplayBaseUrl, getListenHost, getTrustProxySetting } = require("./lib/public-url");
+const { createRateLimiters } = require("./lib/rate-limit");
 const { renderConfigPage } = require("./lib/web-page");
 const { getGeneratedSubtitle } = require("./subtitle-service");
 
@@ -12,6 +14,10 @@ function createApp() {
     const app = express();
     const webDir = path.join(__dirname, "web");
     const configuredRouters = new Map();
+
+    app.set("trust proxy", getTrustProxySetting());
+
+    const rateLimiters = createRateLimiters();
 
     app.use((req, res, next) => {
         res.set("Access-Control-Allow-Origin", "*");
@@ -25,6 +31,8 @@ function createApp() {
 
         next();
     });
+    app.use(rateLimiters.general);
+    app.use(rateLimiters.subtitleWork);
 
     app.use("/assets", express.static(webDir));
 
@@ -72,8 +80,9 @@ function getConfiguredRouter(configuredRouters, sourceLang, targetLang) {
 
 if (require.main === module) {
     const port = Number(process.env.PORT || 53100);
-    const server = createApp().listen(port, "127.0.0.1", () => {
-        const manifestUrl = `http://127.0.0.1:${server.address().port}/manifest.json`;
+    const host = getListenHost();
+    const server = createApp().listen(port, host, () => {
+        const manifestUrl = `${getDisplayBaseUrl(server.address().port)}/manifest.json`;
         console.log("HTTP addon accessible at:", manifestUrl);
     });
 }
