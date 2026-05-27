@@ -8,6 +8,7 @@
 	"dependencies": {
 		"express": "^5.2.1",
 		"googletrans": "^1.0.28",
-		"stremio-addon-sdk": "1.1.x"
+		"stremio-addon-sdk": "1.1.x",
+		"subtitle": "^4.2.2"
 	}
 }
