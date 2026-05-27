@@ -1,25 +1,27 @@
 {
-    "name": "stremio-addon-doublesubtitles",
-    "version": "0.0.1",
-    "description": "Double subtitles for Stremio",
-    "scripts": {
-        "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "lint": "eslint .",
-        "start": "node server.js",
-        "test": "mocha"
-    },
-    "dependencies": {
-        "express": "^5.2.1",
-        "express-rate-limit": "^8.5.2",
-        "googletrans": "^1.0.28",
-        "stremio-addon-sdk": "1.1.x",
-        "subtitle": "^4.2.2"
-    },
-    "devDependencies": {
-        "@eslint/js": "^10.0.1",
-        "eslint": "^10.4.0",
-        "mocha": "^11.7.6",
-        "prettier": "^3.8.3"
-    }
+	"name": "stremio-addon-doublesubtitles",
+	"version": "0.0.1",
+	"description": "Double subtitles for Stremio",
+	"scripts": {
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"lint": "eslint .",
+		"prepare": "husky",
+		"start": "node server.js",
+		"test": "mocha"
+	},
+	"dependencies": {
+		"express": "^5.2.1",
+		"express-rate-limit": "^8.5.2",
+		"googletrans": "^1.0.28",
+		"stremio-addon-sdk": "1.1.x",
+		"subtitle": "^4.2.2"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.4.0",
+		"husky": "^9.0.11",
+		"mocha": "^11.7.6",
+		"prettier": "^3.8.3"
+	}
 }

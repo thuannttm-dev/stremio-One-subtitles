@@ -12,7 +12,6 @@ const manifest = {
     description: "Double subtitles for Stremio",
     behaviorHints: {
         configurable: true,
-        configurationRequired: true,
     },
 };
 function createAddonInterface(config) {
