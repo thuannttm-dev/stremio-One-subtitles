@@ -1,4 +1,5 @@
 const { addonBuilder } = require("stremio-addon-sdk");
+const { getSubtitleOptions } = require("./subtitle-service");
 
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
@@ -17,18 +18,6 @@ const manifest = {
 };
 const builder = new addonBuilder(manifest);
 
-builder.defineSubtitlesHandler(function (args) {
-	console.log("subtitle request:", args);
-
-	return Promise.resolve({
-		subtitles: [
-			{
-				id: "double-subtitles-test-en",
-				url: "https://mkvtoolnix.download/samples/vsshort-en.srt",
-				lang: "eng"
-			}
-		]
-	});
-});
+builder.defineSubtitlesHandler(getSubtitleOptions);
 
 module.exports = builder.getInterface();
