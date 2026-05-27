@@ -16,8 +16,24 @@ const manifest = {
 	"name": "double-subtitles",
 	"description": "Double subtitles for Stremio"
 };
-const builder = new addonBuilder(manifest);
+function createAddonInterface(config) {
+	const builder = new addonBuilder(createManifest(config));
 
-builder.defineSubtitlesHandler(getSubtitleOptions);
+	builder.defineSubtitlesHandler((args) => getSubtitleOptions({ ...args, config }));
+	return builder.getInterface();
+}
 
-module.exports = builder.getInterface();
+function createManifest(config) {
+	if (!config) return manifest;
+
+	return {
+		...manifest,
+		name: `${manifest.name} ${config.sourceLang}->${config.targetLang}`,
+		description: `${manifest.description}: ${config.sourceLang} subtitles with ${config.targetLang} translation`
+	};
+}
+
+module.exports = createAddonInterface();
+module.exports.createAddonInterface = createAddonInterface;
+module.exports.createManifest = createManifest;
+module.exports.manifest = manifest;
