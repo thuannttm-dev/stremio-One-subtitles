@@ -2,8 +2,9 @@
 
 const http = require("http");
 const querystring = require("querystring");
-const { spawn } = require("child_process");
 const addonInterface = require("./addon");
+const { parseConfigPrefix } = require("./lib/config");
+const { readWebAsset, renderConfigPage } = require("./lib/web-page");
 const { getGeneratedSubtitle } = require("./subtitle-service");
 
 const port = Number(process.env.PORT || 53100);
@@ -20,25 +21,41 @@ const server = http.createServer(async (req, res) => {
 	try {
 		const url = new URL(req.url, `http://${req.headers.host || "127.0.0.1"}`);
 
-		if (req.method === "GET" && url.pathname === "/") {
-			sendHtml(res, landingPage());
+		if (isReadRequest(req) && url.pathname === "/") {
+			sendHtml(res, renderConfigPage(addonInterface.manifest));
 			return;
 		}
 
-		if (req.method === "GET" && url.pathname === "/manifest.json") {
+		if (isReadRequest(req) && url.pathname === "/assets/styles.css") {
+			sendCss(res, readWebAsset("styles.css"));
+			return;
+		}
+
+		if (isReadRequest(req) && url.pathname === "/assets/config.js") {
+			sendJavascript(res, readWebAsset("config.js"));
+			return;
+		}
+
+		const configuredManifest = parseConfiguredManifest(url);
+		if (isReadRequest(req) && configuredManifest) {
+			sendJson(res, configuredManifest.manifest);
+			return;
+		}
+
+		if (isReadRequest(req) && url.pathname === "/manifest.json") {
 			sendJson(res, addonInterface.manifest);
 			return;
 		}
 
 		const generatedMatch = url.pathname.match(/^\/generated-subtitles\/([a-f0-9]+)\.vtt$/);
-		if (req.method === "GET" && generatedMatch) {
+		if (isReadRequest(req) && generatedMatch) {
 			const vtt = await getGeneratedSubtitle(generatedMatch[1]);
 			sendVtt(res, vtt);
 			return;
 		}
 
 		const request = parseAddonRequest(url);
-		if (req.method === "GET" && request) {
+		if (isReadRequest(req) && request) {
 			const response = await addonInterface.get(
 				request.resource,
 				request.type,
@@ -65,7 +82,9 @@ server.listen(port, "127.0.0.1", () => {
 
 function parseAddonRequest(url) {
 	const parts = url.pathname.split("/").filter(Boolean);
+	const config = parseConfigPrefix(parts);
 
+	if (config) parts.splice(0, 3);
 	if (parts.length < 3) return null;
 
 	const resource = decodeURIComponent(parts[0]);
@@ -84,14 +103,20 @@ function parseAddonRequest(url) {
 		extra[key] = value;
 	}
 
+	if (config) extra.__config = config;
+
 	if (!id || !type || !resource) return null;
-	return { resource, type, id, extra };
+	return { resource, type, id, extra, config };
 }
 
 function setCorsHeaders(res) {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Headers", "*");
 	res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+}
+
+function isReadRequest(req) {
+	return req.method === "GET" || req.method === "HEAD";
 }
 
 function sendJson(res, value) {
@@ -112,22 +137,28 @@ function sendHtml(res, value) {
 	res.end(value);
 }
 
-function landingPage() {
-	const manifestUrl = `http://127.0.0.1:${port}/manifest.json`;
-
-	return `<!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>${addonInterface.manifest.name}</title>
-	</head>
-	<body>
-		<h1>${addonInterface.manifest.name}</h1>
-		<p>${addonInterface.manifest.description}</p>
-		<p>Manifest: <a href="${manifestUrl}">${manifestUrl}</a></p>
-		<p><a href="${manifestUrl.replace("http://", "stremio://")}">Install Add-on</a></p>
-	</body>
-</html>`;
+function sendCss(res, value) {
+	res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" });
+	res.end(value);
 }
 
+function sendJavascript(res, value) {
+	res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+	res.end(value);
+}
+
+function parseConfiguredManifest(url) {
+	const parts = url.pathname.split("/").filter(Boolean);
+	const config = parseConfigPrefix(parts);
+
+	if (!config || parts[3] !== "manifest.json") return null;
+
+	return {
+		config,
+		manifest: {
+			...addonInterface.manifest,
+			name: `${addonInterface.manifest.name} ${config.sourceLang}->${config.targetLang}`,
+			description: `${addonInterface.manifest.description}: ${config.sourceLang} subtitles with ${config.targetLang} translation`
+		}
+	};
+}
