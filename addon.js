@@ -1,4 +1,4 @@
-const { addonBuilder } = require("stremio-addon-sdk")
+const { addonBuilder } = require("stremio-addon-sdk");
 
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
@@ -14,13 +14,21 @@ const manifest = {
 	],
 	"name": "double-subtitles",
 	"description": "Double subtitles for Stremio"
-}
-const builder = new addonBuilder(manifest)
+};
+const builder = new addonBuilder(manifest);
 
-builder.defineSubtitlesHandler(({type, id, extra}) => {
-	console.log("request for subtitles: "+type+" "+id)
-	// Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineSubtitlesHandler.md
-	return Promise.resolve({ subtitles: [] })
-})
+builder.defineSubtitlesHandler(function (args) {
+	console.log("subtitle request:", args);
 
-module.exports = builder.getInterface()
+	return Promise.resolve({
+		subtitles: [
+			{
+				id: "double-subtitles-test-en",
+				url: "https://mkvtoolnix.download/samples/vsshort-en.srt",
+				lang: "eng"
+			}
+		]
+	});
+});
+
+module.exports = builder.getInterface();
