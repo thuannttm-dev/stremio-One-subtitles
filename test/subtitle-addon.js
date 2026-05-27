@@ -28,11 +28,11 @@ describe("live configured subtitle addon", function () {
 
     it("serves configured manifests for different language pairs", async function () {
         const frenchManifest = await getJson(`${baseUrl}/configure/de/fr/manifest.json`);
-        assert.equal(frenchManifest.name, "double-subtitles de->fr");
+        assert.equal(frenchManifest.name, "Double Subtitles de->fr");
         assert.match(frenchManifest.description, /de subtitles with fr translation/);
 
         const portugueseManifest = await getJson(`${baseUrl}/configure/de/pt-BR/manifest.json`);
-        assert.equal(portugueseManifest.name, "double-subtitles de->pt-BR");
+        assert.equal(portugueseManifest.name, "Double Subtitles de->pt-BR");
         assert.match(portugueseManifest.description, /de subtitles with pt-BR translation/);
     });
 

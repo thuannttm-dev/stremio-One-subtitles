@@ -8,8 +8,12 @@ const manifest = {
     catalogs: [],
     resources: ["subtitles"],
     types: ["movie", "series"],
-    name: "double-subtitles",
+    name: "Double Subtitles",
     description: "Double subtitles for Stremio",
+    behaviorHints: {
+        configurable: true,
+        configurationRequired: true,
+    },
 };
 function createAddonInterface(config) {
     const builder = new addonBuilder(createManifest(config));

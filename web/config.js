@@ -1,7 +1,6 @@
 const form = document.getElementById("configForm");
 const source = document.getElementById("sourceLang");
 const target = document.getElementById("targetLang");
-const manifestLink = document.getElementById("manifestLink");
 const copyButton = document.getElementById("copyManifest");
 const copyStatus = document.getElementById("copyStatus");
 
@@ -9,10 +8,7 @@ function manifestUrl() {
     return `${location.origin}/configure/${encodeURIComponent(source.value)}/${encodeURIComponent(target.value)}/manifest.json`;
 }
 
-function updateLink() {
-    const url = manifestUrl();
-    manifestLink.href = url;
-    manifestLink.textContent = url;
+function updateStatus() {
     copyStatus.textContent = "";
 }
 
@@ -30,9 +26,8 @@ copyButton.addEventListener("click", async () => {
     }
 });
 
-source.addEventListener("change", updateLink);
-target.addEventListener("change", updateLink);
-updateLink();
+source.addEventListener("change", updateStatus);
+target.addEventListener("change", updateStatus);
 
 async function copyText(value) {
     if (navigator.clipboard && window.isSecureContext) {

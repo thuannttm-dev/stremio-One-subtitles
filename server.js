@@ -12,6 +12,7 @@ const { getGeneratedSubtitle } = require("./subtitle-service");
 
 function createApp() {
     const app = express();
+    const publicDir = path.join(__dirname, "assets");
     const webDir = path.join(__dirname, "web");
     const configuredRouters = new Map();
 
@@ -34,6 +35,7 @@ function createApp() {
     app.use(rateLimiters.general);
     app.use(rateLimiters.subtitleWork);
 
+    app.use("/public", express.static(publicDir));
     app.use("/assets", express.static(webDir));
 
     app.get("/", (req, res) => {
