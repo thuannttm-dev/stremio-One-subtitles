@@ -2,6 +2,8 @@
 
 Fetches subtitles from the public Stremio OpenSubtitles v3 addon, translates them with `googletrans`, merges them together and serves generated WebVTT subtitles to Stremio. No OpenSubtitles or Google Translate credentials are required.
 
+![Screenshot of web interface](img/screenshot.webp "Stremio with double subtitles")
+
 ## Setup
 
 Install dependencies:
