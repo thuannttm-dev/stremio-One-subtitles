@@ -42,6 +42,14 @@ function createApp() {
         res.type("html").send(renderConfigPage(addonInterface.manifest));
     });
 
+    app.get("/configure", (req, res) => {
+        res.redirect("/");
+    });
+
+    app.get("/configure/:sourceLang/:targetLang/configure", (req, res) => {
+        res.redirect("/");
+    });
+
     app.get("/generated-subtitles/:key.vtt", async (req, res, next) => {
         try {
             const vtt = await getGeneratedSubtitle(req.params.key);
