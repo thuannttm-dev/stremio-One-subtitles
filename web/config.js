@@ -18,7 +18,7 @@ function updateLink() {
 
 form.addEventListener("submit", (event) => {
     event.preventDefault();
-    location.href = manifestUrl().replace(/^http:\/\//, "stremio://");
+    location.href = manifestUrl().replace(/^https:\/\//, "stremio://");
 });
 
 copyButton.addEventListener("click", async () => {
