@@ -20,6 +20,10 @@ function updateView() {
 
 form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (source.value === target.value) {
+        copyStatus.textContent = "Choose different source and target languages";
+        return;
+    }
     if (selectedProvider() === "deepl" && !deeplApiKey.value.trim()) {
         copyStatus.textContent = "Enter DeepL API key";
         return;
@@ -29,6 +33,10 @@ form.addEventListener("submit", (event) => {
 });
 
 copyButton.addEventListener("click", async () => {
+    if (source.value === target.value) {
+        copyStatus.textContent = "Choose different source and target languages";
+        return;
+    }
     if (selectedProvider() === "deepl" && !deeplApiKey.value.trim()) {
         copyStatus.textContent = "Enter DeepL API key";
         return;
