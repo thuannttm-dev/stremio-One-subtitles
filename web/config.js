@@ -4,6 +4,7 @@ const target = document.getElementById("targetLang");
 const deeplApiKey = document.getElementById("deeplApiKey");
 const deeplKeyField = document.getElementById("deeplKeyField");
 const copyButton = document.getElementById("copyManifest");
+const openStremioWebButton = document.getElementById("openStremioWeb");
 const copyStatus = document.getElementById("copyStatus");
 
 function manifestUrl() {
@@ -13,6 +14,10 @@ function manifestUrl() {
     return `${baseUrl}/deepl/${encodeProviderKey(deeplApiKey.value.trim())}/manifest.json`;
 }
 
+function stremioWebUrl() {
+    return `https://web.stremio.com/#/addons?addon=${encodeURIComponent(manifestUrl())}`;
+}
+
 function updateView() {
     deeplKeyField.hidden = selectedProvider() !== "deepl";
     copyStatus.textContent = "";
@@ -20,27 +25,13 @@ function updateView() {
 
 form.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (source.value === target.value) {
-        copyStatus.textContent = "Choose different source and target languages";
-        return;
-    }
-    if (selectedProvider() === "deepl" && !deeplApiKey.value.trim()) {
-        copyStatus.textContent = "Enter DeepL API key";
-        return;
-    }
+    if (!validateConfig()) return;
 
     location.href = manifestUrl().replace(/^https?:\/\//, "stremio://");
 });
 
 copyButton.addEventListener("click", async () => {
-    if (source.value === target.value) {
-        copyStatus.textContent = "Choose different source and target languages";
-        return;
-    }
-    if (selectedProvider() === "deepl" && !deeplApiKey.value.trim()) {
-        copyStatus.textContent = "Enter DeepL API key";
-        return;
-    }
+    if (!validateConfig()) return;
 
     try {
         await copyText(manifestUrl());
@@ -48,6 +39,12 @@ copyButton.addEventListener("click", async () => {
     } catch {
         copyStatus.textContent = "Copy failed";
     }
+});
+
+openStremioWebButton.addEventListener("click", () => {
+    if (!validateConfig()) return;
+
+    location.href = stremioWebUrl();
 });
 
 source.addEventListener("change", updateView);
@@ -64,6 +61,20 @@ function selectedProvider() {
 
 function encodeProviderKey(value) {
     return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function validateConfig() {
+    if (source.value === target.value) {
+        copyStatus.textContent = "Choose different source and target languages";
+        return false;
+    }
+
+    if (selectedProvider() === "deepl" && !deeplApiKey.value.trim()) {
+        copyStatus.textContent = "Enter DeepL API key";
+        return false;
+    }
+
+    return true;
 }
 
 async function copyText(value) {

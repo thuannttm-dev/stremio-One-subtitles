@@ -196,7 +196,7 @@ button:hover {
 
 .manifest-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     align-items: center;
 }
@@ -216,6 +216,12 @@ button:hover {
 
 .copy-button:hover {
     background: #373f54;
+}
+
+@media (max-width: 420px) {
+    .manifest-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .copy-status {
