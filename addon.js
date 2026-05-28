@@ -4,7 +4,7 @@ const { getSubtitleOptions } = require("./subtitle-service");
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
     id: "community.doublesubtitles",
-    version: "0.0.1",
+    version: "1.0.0",
     catalogs: [],
     resources: ["subtitles"],
     types: ["movie", "series"],

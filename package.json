@@ -1,6 +1,6 @@
 {
 	"name": "stremio-addon-doublesubtitles",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"description": "Double subtitles for Stremio",
 	"scripts": {
 		"format": "prettier --write .",
