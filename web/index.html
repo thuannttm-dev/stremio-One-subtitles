@@ -52,13 +52,17 @@
                     </label>
                     <fieldset class="provider-options">
                         <legend>Translation provider</legend>
+                        <p class="field-note">
+                            Google Translate is free and requires no setup. DeepL uses your own API key and is usually
+                            more stable, precise and faster.
+                        </p>
                         <label class="provider-option">
                             <input type="radio" name="translationProvider" value="googletrans" checked />
-                            <span>Google Translate (Free)</span>
+                            <span>Google Translate</span>
                         </label>
                         <label class="provider-option">
                             <input type="radio" name="translationProvider" value="deepl" />
-                            <span>DeepL (more stable)</span>
+                            <span>DeepL</span>
                         </label>
                     </fieldset>
                     <label id="deeplKeyField" class="deepl-key-field" hidden>
@@ -71,7 +75,8 @@
                     <button type="submit">Install configured addon</button>
                 </form>
                 <p class="install-note">
-                    Stremio Web: copy the manifest URL, open the addons screen, and add it as an addon repository URL.
+                    Install this configured addon, then open a video in Stremio and select subtitles under the
+                    translated language. For Stremio Web, copy the manifest URL and add it as an addon repository URL.
                 </p>
                 <div class="manifest">
                     <div class="manifest-row">
