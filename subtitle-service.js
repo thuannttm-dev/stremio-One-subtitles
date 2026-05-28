@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const { Buffer } = require("buffer");
+const { LRUCache } = require("lru-cache");
 const { getSubtitleConfig } = require("./lib/config");
+const { getCachedGeneratedSubtitle, setCachedGeneratedSubtitle } = require("./lib/generated-subtitle-cache");
 const { fetchText } = require("./lib/http-client");
 const { normalizeStremioLanguage } = require("./lib/languages");
 const logger = require("./lib/logger");
@@ -16,7 +18,15 @@ const { searchPublicStremioOpenSubtitles } = require("./lib/stremio-subtitles");
 const { translateCues } = require("./lib/translator");
 const { translationProvider } = require("./lib/translator");
 const RESULT_LIMIT = Number(process.env.SUBTITLE_RESULT_LIMIT || 3);
-const jobs = new Map();
+const DEFAULT_JOB_MAX = 1000;
+const DEFAULT_JOB_TTL_SECONDS = 24 * 60 * 60;
+const JOB_MAX = DEFAULT_JOB_MAX;
+const JOB_TTL_SECONDS = DEFAULT_JOB_TTL_SECONDS;
+const jobs = new LRUCache({
+    max: JOB_MAX,
+    ttl: JOB_TTL_SECONDS * 1000,
+    updateAgeOnGet: true,
+});
 
 async function getSubtitleOptions(args) {
     const config = getSubtitleConfig(args.config || (args.extra && args.extra.__config));
@@ -82,18 +92,18 @@ async function getSubtitleOptions(args) {
 }
 
 async function getGeneratedSubtitle(key) {
-    const job = jobs.get(key);
+    const cachedSubtitle = await getCachedGeneratedSubtitle(key);
+    if (cachedSubtitle) {
+        logger.debug("generated subtitle cache hit", { key, source: cachedSubtitle.source });
+        recordGeneratedSubtitleCache(`${cachedSubtitle.source}_hit`);
+        return cachedSubtitle.vtt;
+    }
 
+    const job = jobs.get(key);
     if (!job) {
         const error = new Error("Generated subtitle was not found");
         error.statusCode = 404;
         throw error;
-    }
-
-    if (job.vtt) {
-        logger.debug("generated subtitle cache hit", { key });
-        recordGeneratedSubtitleCache("hit");
-        return job.vtt;
     }
 
     if (!job.promise) {
@@ -101,7 +111,14 @@ async function getGeneratedSubtitle(key) {
         recordGeneratedSubtitleCache("miss");
         job.promise = buildTranslatedVtt(job)
             .then((vtt) => {
-                job.vtt = vtt;
+                return setCachedGeneratedSubtitle(key, vtt).then(() => {
+                    if (jobs.get(key) === job) {
+                        jobs.delete(key);
+                    }
+                    return vtt;
+                });
+            })
+            .then((vtt) => {
                 logger.info("generated subtitle cached", {
                     bytes: Buffer.byteLength(vtt, "utf8"),
                     key,
@@ -134,7 +151,7 @@ function createSubtitleOption(args, subtitle, config) {
         subtitleUrl: subtitle.url,
     });
 
-    if (!jobs.has(key)) {
+    if (!jobs.get(key)) {
         jobs.set(key, {
             key,
             config,

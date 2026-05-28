@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
 const { Buffer } = require("buffer");
+const crypto = require("crypto");
 const path = require("path");
 const express = require("express");
+const { LRUCache } = require("lru-cache");
 const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const { createAddonInterface } = require("./addon");
@@ -13,11 +15,20 @@ const { createRateLimiters } = require("./lib/rate-limit");
 const { renderConfigPage } = require("./lib/web-page");
 const { getGeneratedSubtitle } = require("./subtitle-service");
 
+const DEFAULT_CONFIGURED_ROUTER_CACHE_MAX = 100;
+const DEFAULT_CONFIGURED_ROUTER_CACHE_TTL_SECONDS = 6 * 60 * 60;
+const CONFIGURED_ROUTER_CACHE_MAX = DEFAULT_CONFIGURED_ROUTER_CACHE_MAX;
+const CONFIGURED_ROUTER_CACHE_TTL_SECONDS = DEFAULT_CONFIGURED_ROUTER_CACHE_TTL_SECONDS;
+
 function createApp() {
     const app = express();
     const publicDir = path.join(__dirname, "assets");
     const webDir = path.join(__dirname, "web");
-    const configuredRouters = new Map();
+    const configuredRouters = new LRUCache({
+        max: CONFIGURED_ROUTER_CACHE_MAX,
+        ttl: CONFIGURED_ROUTER_CACHE_TTL_SECONDS * 1000,
+        updateAgeOnGet: true,
+    });
 
     app.set("trust proxy", getTrustProxySetting());
 
@@ -123,13 +134,17 @@ function createApp() {
 }
 
 function getConfiguredRouter(configuredRouters, config) {
-    const key = JSON.stringify(config);
+    const key = routerCacheKey(config);
+    const cached = configuredRouters.get(key);
+    if (cached) return cached;
 
-    if (!configuredRouters.has(key)) {
-        configuredRouters.set(key, getRouter(createAddonInterface(config)));
-    }
+    const router = getRouter(createAddonInterface(config));
+    configuredRouters.set(key, router);
+    return router;
+}
 
-    return configuredRouters.get(key);
+function routerCacheKey(config) {
+    return crypto.createHash("sha256").update(JSON.stringify(config)).digest("hex");
 }
 
 function logRequest(req, res, next) {
