@@ -9,6 +9,7 @@ const manifest = {
     resources: ["subtitles"],
     types: ["movie", "series"],
     name: "Double Subtitles",
+    logo: "https://raw.githubusercontent.com/awerks/stremio-double-subtitles/main/assets/logo.png",
     description: "Double subtitles for Stremio",
     behaviorHints: {
         configurable: true,
