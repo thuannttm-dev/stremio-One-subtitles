@@ -5,6 +5,7 @@ const express = require("express");
 const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const { createAddonInterface } = require("./addon");
+const logger = require("./lib/logger");
 const { getDisplayBaseUrl, getListenHost, getTrustProxySetting } = require("./lib/public-url");
 const { createRateLimiters } = require("./lib/rate-limit");
 const { renderConfigPage } = require("./lib/web-page");
@@ -20,6 +21,7 @@ function createApp() {
 
     const rateLimiters = createRateLimiters();
 
+    app.use(logRequest);
     app.use((req, res, next) => {
         res.set("Access-Control-Allow-Origin", "*");
         res.set("Access-Control-Allow-Headers", "*");
@@ -71,7 +73,12 @@ function createApp() {
             return;
         }
 
-        console.error(error);
+        logger.error("request failed", {
+            error,
+            method: req.method,
+            path: req.path,
+            statusCode: error.statusCode || 500,
+        });
         res.status(error.statusCode || 500).json({ error: error.message || "Server error" });
     });
 
@@ -88,12 +95,31 @@ function getConfiguredRouter(configuredRouters, sourceLang, targetLang) {
     return configuredRouters.get(key);
 }
 
+function logRequest(req, res, next) {
+    const startedAt = process.hrtime.bigint();
+
+    res.on("finish", () => {
+        logger.info("http request", {
+            durationMs: Number(process.hrtime.bigint() - startedAt) / 1_000_000,
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+        });
+    });
+
+    next();
+}
+
 if (require.main === module) {
     const port = Number(process.env.PORT || 53100);
     const host = getListenHost();
     const server = createApp().listen(port, host, () => {
         const manifestUrl = `${getDisplayBaseUrl(server.address().port)}/manifest.json`;
-        console.log("HTTP addon accessible at:", manifestUrl);
+        logger.info("server started", {
+            host,
+            manifestUrl,
+            port: server.address().port,
+        });
     });
 }
 
