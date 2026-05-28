@@ -1,6 +1,6 @@
 # Stremio Double Subtitles
 
-Fetches subtitles from the public Stremio OpenSubtitles v3 addon, translates them with `googletrans`, merges them together and serves generated WebVTT subtitles to Stremio. No OpenSubtitles or Google Translate credentials are required.
+Fetches subtitles from the public Stremio OpenSubtitles v3 addon, translates them with `googletrans` or DeepL, merges them together and serves generated WebVTT subtitles to Stremio. No OpenSubtitles or Google Translate credentials are required.
 
 ![Screenshot of web interface](img/screenshot.webp "Stremio with double subtitles")
 
@@ -31,3 +31,13 @@ The local manifest URL is:
 ```text
 http://127.0.0.1:53100/manifest.json
 ```
+
+## Self-host
+
+### Docker
+
+```bash
+docker run -p 53100:53100 ghcr.io/awerks/stremio-double-subtitles:latest
+```
+
+then open the local web interface:
