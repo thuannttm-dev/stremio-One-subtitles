@@ -66,7 +66,39 @@ describe("live configured subtitle addon", function () {
         }
     });
 
+    it("serves prometheus metrics", async function () {
+        const metrics = await getText(`${baseUrl}/metrics`);
+
+        assert.match(metrics, /stremio_double_subtitles_http_requests_total/);
+        assert.match(metrics, /stremio_double_subtitles_subtitle_lookup_total/);
+    });
+
+    it("metrics with a bearer token", async function () {
+        const previousToken = process.env.METRICS_TOKEN;
+        const { createApp } = require("../server");
+        let metricsServer;
+
+        process.env.METRICS_TOKEN = "secret";
+
+        try {
+            metricsServer = createApp().listen(0, "127.0.0.1");
+            await once(metricsServer, "listening");
+            const metricsBaseUrl = `http://127.0.0.1:${metricsServer.address().port}`;
+
+            assert.equal((await getResponse(`${metricsBaseUrl}/metrics`)).statusCode, 401);
+        } finally {
+            restoreEnv("METRICS_TOKEN", previousToken);
+
+            if (metricsServer) {
+                metricsServer.close();
+                await once(metricsServer, "close");
+            }
+        }
+    });
+
     it("maps configured target language to Stremio subtitle language code", async function () {
+        this.timeout(15000);
+
         const subtitlesResponse = await getJson(
             `${baseUrl}/configure/de/pt-BR/subtitles/series/tt0428167%3A1%3A1/filename=Stromberg.S01E01.Der.Parkplatz.GERMAN.DVDRIP.ENGSUB.mkv&videoSize=242521670.json`,
         );

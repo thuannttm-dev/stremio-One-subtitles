@@ -6,6 +6,7 @@ const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const { createAddonInterface } = require("./addon");
 const logger = require("./lib/logger");
+const { contentType, recordHttpRequest, renderMetrics } = require("./lib/metrics");
 const { getDisplayBaseUrl, getListenHost, getTrustProxySetting } = require("./lib/public-url");
 const { createRateLimiters } = require("./lib/rate-limit");
 const { renderConfigPage } = require("./lib/web-page");
@@ -50,6 +51,19 @@ function createApp() {
 
     app.get("/configure/:sourceLang/:targetLang/configure", (req, res) => {
         res.redirect("/");
+    });
+
+    app.get("/metrics", async (req, res, next) => {
+        if (!isMetricsRequestAuthorized(req)) {
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
+        try {
+            res.type(contentType).send(await renderMetrics());
+        } catch (error) {
+            next(error);
+        }
     });
 
     app.get("/generated-subtitles/:key.vtt", async (req, res, next) => {
@@ -99,8 +113,16 @@ function logRequest(req, res, next) {
     const startedAt = process.hrtime.bigint();
 
     res.on("finish", () => {
+        const durationSeconds = Number(process.hrtime.bigint() - startedAt) / 1_000_000_000;
+        const route = routeLabel(req);
+        recordHttpRequest({
+            durationSeconds,
+            method: req.method,
+            route,
+            status: res.statusCode,
+        });
         logger.info("http request", {
-            durationMs: Number(process.hrtime.bigint() - startedAt) / 1_000_000,
+            durationMs: durationSeconds * 1000,
             method: req.method,
             path: req.path,
             statusCode: res.statusCode,
@@ -108,6 +130,27 @@ function logRequest(req, res, next) {
     });
 
     next();
+}
+
+function routeLabel(req) {
+    if (req.path === "/") return "/";
+    if (req.path === "/metrics") return "/metrics";
+    if (req.path.startsWith("/assets/")) return "/assets/*";
+    if (req.path.startsWith("/public/")) return "/public/*";
+    if (req.path.startsWith("/generated-subtitles/")) return "/generated-subtitles/:key.vtt";
+    if (/^\/configure\/[^/]+\/[^/]+\/subtitles\//.test(req.path)) {
+        return "/configure/:sourceLang/:targetLang/subtitles/*";
+    }
+    if (/^\/configure\/[^/]+\/[^/]+/.test(req.path)) return "/configure/:sourceLang/:targetLang/*";
+    if (req.path.startsWith("/subtitles/")) return "/subtitles/*";
+    return "other";
+}
+
+function isMetricsRequestAuthorized(req) {
+    const token = process.env.METRICS_TOKEN;
+    if (!token) return true;
+
+    return req.get("authorization") === `Bearer ${token}`;
 }
 
 if (require.main === module) {
