@@ -12,27 +12,21 @@ Install dependencies:
 pnpm install
 ```
 
+## Run
+
+```bash
+pnpm start
+```
+
 Open the local web interface and choose the source and target languages:
 
 ```text
 http://127.0.0.1:53100/
 ```
 
+Install it on Stremio using instructions from the web interface.
+
 The generated subtitle is one double subtitle: source language on top, translated language on the bottom.
-
-## Run
-
-```bash
-pnpm start -- --launch
-```
-
-The local manifest URL is:
-
-```text
-http://127.0.0.1:53100/manifest.json
-```
-
-## Self-host
 
 ### Docker
 
@@ -40,4 +34,4 @@ http://127.0.0.1:53100/manifest.json
 docker run -p 53100:53100 ghcr.io/awerks/stremio-double-subtitles:latest
 ```
 
-then open the local web interface:
+then open the local web interface

@@ -14,6 +14,11 @@ const manifest = {
     behaviorHints: {
         configurable: true,
     },
+    stremioAddonsConfig: {
+        issuer: "https://stremio-addons.net",
+        signature:
+            "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..lZOE3jDOfPKJ6JqA06j3Tw.M1u9EjpQcpG9phA3owATbdKoqryengZhgSCmLP7a5USGOvSqMJpX_FBBvqs7KSmz69Gx0i1L299Pc6q15MlgPFX_fr3Lc8YPCIwszypbCDYvO9AEFUlYYaFDGf3NYgC2.eSeBQQsFsOdm2TLdBypbow",
+    },
 };
 function createAddonInterface(config) {
     const builder = new addonBuilder(createManifest(config));
