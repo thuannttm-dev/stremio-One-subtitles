@@ -24,11 +24,12 @@ function createAddonInterface(config) {
 
 function createManifest(config) {
     if (!config) return manifest;
+    const provider = config.translationProvider === "deepl" ? "DeepL" : "Google";
 
     return {
         ...manifest,
         name: `${manifest.name} ${config.sourceLang}->${config.targetLang}`,
-        description: `${manifest.description}: ${config.sourceLang} subtitles with ${config.targetLang} translation`,
+        description: `${manifest.description}: ${config.sourceLang} subtitles with ${config.targetLang} translation via ${provider}`,
     };
 }
 

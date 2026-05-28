@@ -14,9 +14,9 @@ async function getText(url) {
     return response.body;
 }
 
-function getResponse(url) {
+function getResponse(url, options = {}) {
     return new Promise((resolve, reject) => {
-        http.get(url, (response) => {
+        http.get(url, options, (response) => {
             let body = "";
 
             response.setEncoding("utf8");

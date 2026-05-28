@@ -50,6 +50,24 @@
                             {{targetOptions}}
                         </select>
                     </label>
+                    <fieldset class="provider-options">
+                        <legend>Translation provider</legend>
+                        <label class="provider-option">
+                            <input type="radio" name="translationProvider" value="googletrans" checked />
+                            <span>Google Translate (Free)</span>
+                        </label>
+                        <label class="provider-option">
+                            <input type="radio" name="translationProvider" value="deepl" />
+                            <span>DeepL (more stable)</span>
+                        </label>
+                    </fieldset>
+                    <label id="deeplKeyField" class="deepl-key-field" hidden>
+                        <span>DeepL API key</span>
+                        <input id="deeplApiKey" name="deeplApiKey" type="password" autocomplete="off" />
+                        <a href="https://www.deepl.com/en/your-account/keys" target="_blank" rel="noreferrer">
+                            Get your API key here
+                        </a>
+                    </label>
                     <button type="submit">Install configured addon</button>
                 </form>
                 <p class="install-note">

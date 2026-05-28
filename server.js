@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const { Buffer } = require("buffer");
 const path = require("path");
 const express = require("express");
 const { getRouter } = require("stremio-addon-sdk");
@@ -53,7 +54,16 @@ function createApp() {
         res.redirect("/");
     });
 
+    app.get("/configure/:sourceLang/:targetLang/:translationProvider/:deeplApiKey/configure", (req, res) => {
+        res.redirect("/");
+    });
+
     app.get("/metrics", async (req, res, next) => {
+        if (!isMetricsRequestAllowed(req)) {
+            res.status(403).json({ error: "Forbidden" });
+            return;
+        }
+
         if (!isMetricsRequestAuthorized(req)) {
             res.status(401).json({ error: "Unauthorized" });
             return;
@@ -75,8 +85,21 @@ function createApp() {
         }
     });
 
+    app.use("/configure/:sourceLang/:targetLang/:translationProvider/:deeplApiKey", (req, res, next) => {
+        getConfiguredRouter(configuredRouters, {
+            deeplApiKey: decodeProviderKey(req.params.deeplApiKey),
+            sourceLang: req.params.sourceLang,
+            targetLang: req.params.targetLang,
+            translationProvider: req.params.translationProvider,
+        })(req, res, next);
+    });
+
     app.use("/configure/:sourceLang/:targetLang", (req, res, next) => {
-        getConfiguredRouter(configuredRouters, req.params.sourceLang, req.params.targetLang)(req, res, next);
+        getConfiguredRouter(configuredRouters, {
+            sourceLang: req.params.sourceLang,
+            targetLang: req.params.targetLang,
+            translationProvider: "googletrans",
+        })(req, res, next);
     });
 
     app.use(getRouter(addonInterface));
@@ -99,11 +122,11 @@ function createApp() {
     return app;
 }
 
-function getConfiguredRouter(configuredRouters, sourceLang, targetLang) {
-    const key = `${sourceLang}:${targetLang}`;
+function getConfiguredRouter(configuredRouters, config) {
+    const key = JSON.stringify(config);
 
     if (!configuredRouters.has(key)) {
-        configuredRouters.set(key, getRouter(createAddonInterface({ sourceLang, targetLang })));
+        configuredRouters.set(key, getRouter(createAddonInterface(config)));
     }
 
     return configuredRouters.get(key);
@@ -149,8 +172,42 @@ function routeLabel(req) {
 function isMetricsRequestAuthorized(req) {
     const token = process.env.METRICS_TOKEN;
     if (!token) return true;
-
     return req.get("authorization") === `Bearer ${token}`;
+}
+
+function isMetricsRequestAllowed(req) {
+    return clientAddresses(req).some(isPrivateAddress);
+}
+
+function clientAddresses(req) {
+    const forwardedFor = String(req.get("x-forwarded-for") || "")
+        .split(",")
+        .map((address) => address.trim())
+        .filter(Boolean);
+
+    if (forwardedFor.length) return forwardedFor;
+
+    return [req.get("x-real-ip"), req.ip, req.socket && req.socket.remoteAddress].filter(Boolean);
+}
+
+function isPrivateAddress(address) {
+    const ip = String(address)
+        .replace(/^::ffff:/, "")
+        .toLowerCase();
+
+    return (
+        ip === "127.0.0.1" ||
+        ip === "::1" ||
+        ip.startsWith("10.") ||
+        ip.startsWith("192.168.") ||
+        /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip) ||
+        ip.startsWith("fc") ||
+        ip.startsWith("fd")
+    );
+}
+
+function decodeProviderKey(value) {
+    return Buffer.from(String(value).replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
 }
 
 if (require.main === module) {
@@ -168,4 +225,6 @@ if (require.main === module) {
 
 module.exports = {
     createApp,
+    decodeProviderKey,
+    isPrivateAddress,
 };

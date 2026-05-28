@@ -27,6 +27,8 @@ module.exports = [
                 it: "readonly",
                 before: "readonly",
                 after: "readonly",
+                afterEach: "readonly",
+                btoa: "readonly",
             },
         },
         rules: {

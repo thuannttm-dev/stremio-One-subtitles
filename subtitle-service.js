@@ -14,7 +14,7 @@ const { getPublicBaseUrl } = require("./lib/public-url");
 const { composeVtt, parseSubtitleCues } = require("./lib/subtitle-parser");
 const { searchPublicStremioOpenSubtitles } = require("./lib/stremio-subtitles");
 const { translateCues } = require("./lib/translator");
-
+const { translationProvider } = require("./lib/translator");
 const RESULT_LIMIT = Number(process.env.SUBTITLE_RESULT_LIMIT || 3);
 const jobs = new Map();
 
@@ -170,6 +170,7 @@ async function buildTranslatedVtt(job) {
         key: job.key,
         sourceLanguage: config.googleSourceLanguage,
         targetLanguage: config.googleTargetLanguage,
+        provider: translationProvider(config),
     });
     try {
         const translations = await translateCues(cues, config);
