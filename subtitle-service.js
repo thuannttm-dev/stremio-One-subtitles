@@ -133,38 +133,7 @@ async function getGeneratedSubtitleResponse(key) {
         });
     }
 
-    const source = job.promise ? "joined" : "build";
-    if (!job.promise) {
-        logger.info("generated subtitle build queued", { key });
-        recordGeneratedSubtitleCache("miss");
-        job.promise = buildTranslatedVtt(job)
-            .then((vtt) => {
-                return setCachedGeneratedSubtitle(key, vtt).then(() => {
-                    if (jobs.get(key) === job) {
-                        jobs.delete(key);
-                    }
-                    return vtt;
-                });
-            })
-            .then((vtt) => {
-                logger.info("generated subtitle cached", {
-                    bytes: Buffer.byteLength(vtt, "utf8"),
-                    key,
-                });
-                return vtt;
-            })
-            .catch((error) => {
-                job.promise = null;
-                logger.error("generated subtitle build failed", {
-                    error,
-                    key,
-                });
-                throw error;
-            });
-    } else {
-        logger.debug("generated subtitle build joined", { key });
-        recordGeneratedSubtitleCache("joined");
-    }
+    const source = startGeneratedSubtitleBuild(job, "request");
 
     try {
         const vtt = await job.promise;
@@ -209,10 +178,13 @@ function createSubtitleOptions(args, results, sourceLanguageSubtitles, config) {
         ];
     }
 
-    return sourceLanguageSubtitles
+    const subtitles = sourceLanguageSubtitles
         .map((subtitle) => createSubtitleOption(args, subtitle, config))
         .filter(Boolean)
         .slice(0, RESULT_LIMIT);
+    queueFirstSubtitleBuild(subtitles);
+
+    return subtitles;
 }
 
 function generatedSubtitleResponse(vtt) {
@@ -282,6 +254,55 @@ function createSubtitleOption(args, subtitle, config) {
     };
 }
 
+function queueFirstSubtitleBuild(subtitles) {
+    const firstSubtitle = subtitles[0];
+    if (!firstSubtitle) return;
+
+    const key = generatedSubtitleKeyFromUrl(firstSubtitle.url);
+    const job = jobs.get(key);
+    if (!job) return;
+
+    startGeneratedSubtitleBuild(job, "preload");
+    job.promise.catch(() => {});
+}
+
+function startGeneratedSubtitleBuild(job, reason) {
+    if (job.promise) {
+        logger.debug("generated subtitle build joined", { key: job.key, reason });
+        recordGeneratedSubtitleCache("joined");
+        return "joined";
+    }
+
+    logger.info("generated subtitle build queued", { key: job.key, reason });
+    recordGeneratedSubtitleCache("miss");
+    job.promise = buildTranslatedVtt(job)
+        .then((vtt) => {
+            return setCachedGeneratedSubtitle(job.key, vtt).then(() => {
+                if (jobs.get(job.key) === job) {
+                    jobs.delete(job.key);
+                }
+                return vtt;
+            });
+        })
+        .then((vtt) => {
+            logger.info("generated subtitle cached", {
+                bytes: Buffer.byteLength(vtt, "utf8"),
+                key: job.key,
+            });
+            return vtt;
+        })
+        .catch((error) => {
+            job.promise = null;
+            logger.error("generated subtitle build failed", {
+                error,
+                key: job.key,
+            });
+            throw error;
+        });
+
+    return "build";
+}
+
 async function buildTranslatedVtt(job) {
     const config = getSubtitleConfig(job.config);
     const startedAt = process.hrtime.bigint();
@@ -333,6 +354,11 @@ async function buildTranslatedVtt(job) {
 
 function hashKey(value) {
     return crypto.createHash("sha1").update(JSON.stringify(value)).digest("hex").slice(0, 24);
+}
+
+function generatedSubtitleKeyFromUrl(value) {
+    const match = String(value).match(/\/generated-subtitles\/([^/.]+)\.vtt$/);
+    return match[1];
 }
 
 module.exports = {

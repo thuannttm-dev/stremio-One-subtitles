@@ -4,23 +4,27 @@ const { getGeneratedSubtitleResponse, getSubtitleOptions } = require("../subtitl
 
 describe("subtitle service", function () {
     let previousAddonBaseUrl;
+    let previousConsoleError;
     let previousConsoleLog;
     let previousFetch;
     let previousLogLevel;
 
     beforeEach(function () {
         previousAddonBaseUrl = process.env.ADDON_BASE_URL;
+        previousConsoleError = console.error;
         previousConsoleLog = console.log;
         previousFetch = global.fetch;
         previousLogLevel = process.env.LOG_LEVEL;
         process.env.ADDON_BASE_URL = "http://127.0.0.1:53100";
         process.env.LOG_LEVEL = "info";
+        console.error = () => {};
         console.log = () => {};
         clearGeneratedSubtitleCacheForTests();
         setRedisClientForTests(null);
     });
 
     afterEach(function () {
+        console.error = previousConsoleError;
         console.log = previousConsoleLog;
         global.fetch = previousFetch;
         restoreEnv("ADDON_BASE_URL", previousAddonBaseUrl);
@@ -67,6 +71,46 @@ describe("subtitle service", function () {
         assert.equal(response.subtitles[0].id, "double-subtitles-diagnostic-no-source-language-subtitles-to-eng");
         assert.equal(response.subtitles[0].lang, "eng");
         assert.match(response.subtitles[0].url, /^http:\/\/127\.0\.0\.1:53100\/diagnostic-subtitles\/.+\.vtt$/);
+    });
+
+    it("starts translating the first subtitle candidate while returning subtitle options", async function () {
+        let sourceSubtitleRequested = false;
+        global.fetch = async (url) => {
+            if (String(url).startsWith("https://opensubtitles-v3.strem.io/")) {
+                return {
+                    ok: true,
+                    text: async () =>
+                        JSON.stringify({
+                            subtitles: [
+                                {
+                                    id: "1",
+                                    lang: "ger",
+                                    url: "https://example.com/source.vtt",
+                                },
+                            ],
+                        }),
+                };
+            }
+
+            sourceSubtitleRequested = true;
+            return {
+                ok: true,
+                text: async () => "WEBVTT\n\n",
+            };
+        };
+
+        const response = await getSubtitleOptions({
+            config: {
+                sourceLang: "de",
+                targetLang: "en",
+                translationProvider: "googletrans",
+            },
+            id: "tt123",
+            type: "movie",
+        });
+
+        assert.equal(response.subtitles.length, 1);
+        assert.equal(sourceSubtitleRequested, true);
     });
 });
 
