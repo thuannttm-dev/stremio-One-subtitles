@@ -23,6 +23,7 @@ const CONFIGURED_ROUTER_CACHE_TTL_SECONDS = DEFAULT_CONFIGURED_ROUTER_CACHE_TTL_
 
 function createApp() {
     const app = express();
+    const imgDir = path.join(__dirname, "img");
     const publicDir = path.join(__dirname, "assets");
     const webDir = path.join(__dirname, "web");
     const configuredRouters = new LRUCache({
@@ -53,6 +54,7 @@ function createApp() {
 
     app.use("/public", express.static(publicDir));
     app.use("/assets", express.static(webDir));
+    app.use("/img", express.static(imgDir));
 
     app.get("/", (req, res) => {
         res.type("html").send(renderConfigPage(addonInterface.manifest));
@@ -184,6 +186,7 @@ function routeLabel(req) {
     if (req.path === "/") return "/";
     if (req.path === "/metrics") return "/metrics";
     if (req.path.startsWith("/assets/")) return "/assets/*";
+    if (req.path.startsWith("/img/")) return "/img/*";
     if (req.path.startsWith("/public/")) return "/public/*";
     if (req.path.startsWith("/generated-subtitles/")) return "/generated-subtitles/:key.vtt";
     if (req.path.startsWith("/diagnostic-subtitles/")) return "/diagnostic-subtitles/:payload.vtt";

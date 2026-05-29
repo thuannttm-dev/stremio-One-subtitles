@@ -31,6 +31,15 @@ body {
     padding: 32px 16px;
 }
 
+.layout {
+    width: min(1144px, 100%);
+    display: grid;
+    grid-template-columns: minmax(360px, 460px) minmax(460px, 660px);
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+}
+
 .panel {
     position: relative;
     width: min(460px, 100%);
@@ -218,13 +227,93 @@ button:hover {
     background: #373f54;
 }
 
-@media (max-width: 420px) {
-    .manifest-row {
-        grid-template-columns: 1fr;
-    }
-}
-
 .copy-status {
     min-height: 18px;
     color: #99e2b4;
+}
+
+.screenshots {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    width: min(560px, 100%);
+    height: min(724px, calc(100vh - 64px));
+    min-width: 0;
+}
+
+.screenshot-card {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 10px;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(22, 24, 33, 0.72);
+}
+
+.screenshot-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border-radius: 6px;
+    object-fit: contain;
+}
+
+.screenshot-card figcaption {
+    display: grid;
+    gap: 3px;
+    margin-top: 9px;
+    color: #aeb7ca;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.screenshot-card figcaption strong {
+    color: #dfe5f6;
+    font-size: 14px;
+}
+
+.screenshot-card-small {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.screenshot-card-small img {
+    width: 100%;
+    height: 100%;
+}
+
+.screenshot-card-small figcaption {
+    margin-top: 9px;
+}
+
+@media (max-width: 920px) {
+    .shell {
+        min-height: auto;
+        padding: 32px 16px;
+    }
+
+    .layout {
+        max-width: 620px;
+        grid-template-columns: 1fr;
+    }
+
+    .screenshots {
+        height: auto;
+        max-height: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .manifest-row,
+    .screenshot-card-small {
+        grid-template-columns: 1fr;
+    }
+
+    .screenshot-card-small figcaption {
+        margin-top: 9px;
+    }
 }
