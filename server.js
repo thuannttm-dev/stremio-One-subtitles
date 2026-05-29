@@ -8,12 +8,13 @@ const { LRUCache } = require("lru-cache");
 const { getRouter } = require("stremio-addon-sdk");
 const addonInterface = require("./addon");
 const { createAddonInterface } = require("./addon");
+const { composeDiagnosticVtt, parseDiagnosticSubtitlePayload } = require("./lib/diagnostic-subtitle");
 const logger = require("./lib/logger");
 const { contentType, recordHttpRequest, renderMetrics } = require("./lib/metrics");
 const { getDisplayBaseUrl, getListenHost, getTrustProxySetting } = require("./lib/public-url");
 const { createRateLimiters } = require("./lib/rate-limit");
 const { renderConfigPage } = require("./lib/web-page");
-const { getGeneratedSubtitle } = require("./subtitle-service");
+const { getGeneratedSubtitleResponse } = require("./subtitle-service");
 
 const DEFAULT_CONFIGURED_ROUTER_CACHE_MAX = 100;
 const DEFAULT_CONFIGURED_ROUTER_CACHE_TTL_SECONDS = 6 * 60 * 60;
@@ -89,8 +90,17 @@ function createApp() {
 
     app.get("/generated-subtitles/:key.vtt", async (req, res, next) => {
         try {
-            const vtt = await getGeneratedSubtitle(req.params.key);
-            res.type("text/vtt").set("Cache-Control", "public, max-age=86400").send(vtt);
+            const subtitle = await getGeneratedSubtitleResponse(req.params.key);
+            res.type("text/vtt").set("Cache-Control", subtitle.cacheControl).send(subtitle.vtt);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    app.get("/diagnostic-subtitles/:payload.vtt", (req, res, next) => {
+        try {
+            const payload = parseDiagnosticSubtitlePayload(req.params.payload);
+            res.type("text/vtt").set("Cache-Control", "no-store").send(composeDiagnosticVtt(payload));
         } catch (error) {
             next(error);
         }
@@ -176,6 +186,7 @@ function routeLabel(req) {
     if (req.path.startsWith("/assets/")) return "/assets/*";
     if (req.path.startsWith("/public/")) return "/public/*";
     if (req.path.startsWith("/generated-subtitles/")) return "/generated-subtitles/:key.vtt";
+    if (req.path.startsWith("/diagnostic-subtitles/")) return "/diagnostic-subtitles/:payload.vtt";
     if (/^\/configure\/[^/]+\/[^/]+\/subtitles\//.test(req.path)) {
         return "/configure/:sourceLang/:targetLang/subtitles/*";
     }

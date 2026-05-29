@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const { Buffer } = require("buffer");
 const { LRUCache } = require("lru-cache");
 const { getSubtitleConfig } = require("./lib/config");
+const { composeDiagnosticVtt, createDiagnosticSubtitleOption } = require("./lib/diagnostic-subtitle");
 const { getCachedGeneratedSubtitle, setCachedGeneratedSubtitle } = require("./lib/generated-subtitle-cache");
 const { fetchText } = require("./lib/http-client");
 const { normalizeStremioLanguage } = require("./lib/languages");
@@ -18,6 +19,8 @@ const { searchPublicStremioOpenSubtitles } = require("./lib/stremio-subtitles");
 const { translateCues } = require("./lib/translator");
 const { translationProvider } = require("./lib/translator");
 const RESULT_LIMIT = Number(process.env.SUBTITLE_RESULT_LIMIT || 3);
+const GENERATED_SUBTITLE_CACHE_CONTROL = "public, max-age=86400";
+const DIAGNOSTIC_SUBTITLE_CACHE_CONTROL = "no-store";
 const DEFAULT_JOB_MAX = 1000;
 const DEFAULT_JOB_TTL_SECONDS = 24 * 60 * 60;
 const JOB_MAX = DEFAULT_JOB_MAX;
@@ -56,10 +59,7 @@ async function getSubtitleOptions(args) {
             targetLanguage: config.targetLanguage,
             type: args.type,
         });
-        const subtitles = sourceLanguageSubtitles
-            .map((subtitle) => createSubtitleOption(args, subtitle, config))
-            .filter(Boolean)
-            .slice(0, RESULT_LIMIT);
+        const subtitles = createSubtitleOptions(args, results, sourceLanguageSubtitles, config);
         recordSubtitleLookup({
             sourceLanguage: config.sourceLanguage,
             status: "success",
@@ -87,25 +87,53 @@ async function getSubtitleOptions(args) {
             targetLanguage: config.targetLanguage,
             type: args.type,
         });
-        return { subtitles: [] };
+        const subtitles = [
+            createDiagnosticSubtitleOption({
+                code: "lookup-failed",
+                config,
+                title: "Double Subtitles lookup failed",
+                message: "Could not look up source subtitles for this video.",
+            }),
+        ];
+        logger.info("subtitle options resolved", {
+            diagnostic: true,
+            id: args.id,
+            returnedCount: subtitles.length,
+            sourceLanguageCount: 0,
+            totalCount: 0,
+            topSubtitleIds: [],
+        });
+        return { subtitles };
     }
 }
 
-async function getGeneratedSubtitle(key) {
+async function getGeneratedSubtitleResponse(key) {
+    const startedAt = process.hrtime.bigint();
     const cachedSubtitle = await getCachedGeneratedSubtitle(key);
     if (cachedSubtitle) {
         logger.debug("generated subtitle cache hit", { key, source: cachedSubtitle.source });
         recordGeneratedSubtitleCache(`${cachedSubtitle.source}_hit`);
-        return cachedSubtitle.vtt;
+        logGeneratedSubtitleServed({
+            cacheSource: cachedSubtitle.source,
+            key,
+            source: "cache",
+            startedAt,
+            vtt: cachedSubtitle.vtt,
+        });
+        return generatedSubtitleResponse(cachedSubtitle.vtt);
     }
 
     const job = jobs.get(key);
     if (!job) {
-        const error = new Error("Generated subtitle was not found");
-        error.statusCode = 404;
-        throw error;
+        return diagnosticGeneratedSubtitleResponse({
+            key,
+            message: "Generated subtitle expired or was not found.",
+            source: "missing",
+            startedAt,
+        });
     }
 
+    const source = job.promise ? "joined" : "build";
     if (!job.promise) {
         logger.info("generated subtitle build queued", { key });
         recordGeneratedSubtitleCache("miss");
@@ -138,7 +166,94 @@ async function getGeneratedSubtitle(key) {
         recordGeneratedSubtitleCache("joined");
     }
 
-    return job.promise;
+    try {
+        const vtt = await job.promise;
+        logGeneratedSubtitleServed({
+            key,
+            source,
+            startedAt,
+            vtt,
+        });
+        return generatedSubtitleResponse(vtt);
+    } catch (error) {
+        return diagnosticGeneratedSubtitleResponse({
+            error,
+            key,
+            message: "Could not generate translated subtitles for this video.",
+            source: "error",
+            startedAt,
+        });
+    }
+}
+
+function createSubtitleOptions(args, results, sourceLanguageSubtitles, config) {
+    if (!results.length) {
+        return [
+            createDiagnosticSubtitleOption({
+                code: "no-upstream-subtitles",
+                config,
+                title: "Double Subtitles notice",
+                message: "OpenSubtitles did not return any subtitles for this video.",
+            }),
+        ];
+    }
+
+    if (!sourceLanguageSubtitles.length) {
+        return [
+            createDiagnosticSubtitleOption({
+                code: "no-source-language-subtitles",
+                config,
+                title: "Double Subtitles notice",
+                message: `No ${config.sourceLanguage} subtitles were found for this video.`,
+            }),
+        ];
+    }
+
+    return sourceLanguageSubtitles
+        .map((subtitle) => createSubtitleOption(args, subtitle, config))
+        .filter(Boolean)
+        .slice(0, RESULT_LIMIT);
+}
+
+function generatedSubtitleResponse(vtt) {
+    return {
+        cacheControl: GENERATED_SUBTITLE_CACHE_CONTROL,
+        diagnostic: false,
+        vtt,
+    };
+}
+
+function diagnosticGeneratedSubtitleResponse({ error, key, message, source, startedAt }) {
+    const vtt = composeDiagnosticVtt({
+        title: "Double Subtitles error",
+        message,
+    });
+    logGeneratedSubtitleServed({
+        diagnostic: true,
+        error,
+        key,
+        source,
+        startedAt,
+        vtt,
+    });
+
+    return {
+        cacheControl: DIAGNOSTIC_SUBTITLE_CACHE_CONTROL,
+        diagnostic: true,
+        vtt,
+    };
+}
+
+function logGeneratedSubtitleServed({ cacheSource, diagnostic, error, key, source, startedAt, vtt }) {
+    logger.info("generated subtitle served", {
+        bytes: Buffer.byteLength(vtt, "utf8"),
+        cacheSource,
+        diagnostic,
+        durationMs: Number(process.hrtime.bigint() - startedAt) / 1_000_000,
+        error,
+        key,
+        source,
+    });
 }
 
 function createSubtitleOption(args, subtitle, config) {
@@ -221,6 +336,6 @@ function hashKey(value) {
 }
 
 module.exports = {
-    getGeneratedSubtitle,
+    getGeneratedSubtitleResponse,
     getSubtitleOptions,
 };
