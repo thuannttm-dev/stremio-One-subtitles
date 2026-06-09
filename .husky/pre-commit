@@ -1,5 +1,6 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 pnpm lint
-pnpm format:check
+pnpm format
+
+# add any changes to staged files after formatting
+
+git add .

@@ -37,16 +37,14 @@ describe("live configured subtitle addon", function () {
     });
 
     it("rate limits repeated requests", async function () {
-        const previousEnabled = process.env.RATE_LIMIT_ENABLED;
         const previousMax = process.env.RATE_LIMIT_MAX;
         const previousWindowMs = process.env.RATE_LIMIT_WINDOW_MS;
         const { createApp } = require("../server");
         let rateLimitedServer;
 
-        process.env.RATE_LIMIT_ENABLED = "true";
         process.env.RATE_LIMIT_MAX = "1";
         process.env.RATE_LIMIT_WINDOW_MS = "60000";
-
+        process.env.NODE_ENV = "production";
         try {
             rateLimitedServer = createApp().listen(0, "127.0.0.1");
             await once(rateLimitedServer, "listening");
@@ -55,10 +53,9 @@ describe("live configured subtitle addon", function () {
             assert.equal((await getResponse(`${rateLimitedBaseUrl}/`)).statusCode, 200);
             assert.equal((await getResponse(`${rateLimitedBaseUrl}/`)).statusCode, 429);
         } finally {
-            restoreEnv("RATE_LIMIT_ENABLED", previousEnabled);
             restoreEnv("RATE_LIMIT_MAX", previousMax);
             restoreEnv("RATE_LIMIT_WINDOW_MS", previousWindowMs);
-
+            restoreEnv("NODE_ENV", "development");
             if (rateLimitedServer) {
                 rateLimitedServer.close();
                 await once(rateLimitedServer, "close");

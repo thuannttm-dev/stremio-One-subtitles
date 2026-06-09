@@ -5,9 +5,9 @@
 	"scripts": {
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"lint": "eslint .",
+		"lint": "eslint . --fix",
 		"prepare": "husky || true",
-		"start": "node server.js",
+		"start": "node --watch --watch-path=server.js --watch-path=addon.js --watch-path=subtitle-service.js --watch-path=lib --watch-path=web server.js",
 		"test": "mocha"
 	},
 	"dependencies": {

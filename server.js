@@ -243,10 +243,10 @@ if (require.main === module) {
     const port = Number(process.env.PORT || 53100);
     const host = getListenHost();
     const server = createApp().listen(port, host, () => {
-        const manifestUrl = `${getDisplayBaseUrl(server.address().port)}/manifest.json`;
+        const baseUrl = getDisplayBaseUrl(server.address().port);
         logger.info("server started", {
             host,
-            manifestUrl,
+            baseUrl: baseUrl,
             port: server.address().port,
         });
     });

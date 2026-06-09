@@ -49,10 +49,25 @@ body {
     background: rgba(22, 24, 33, 0.92);
 }
 
-.github-link {
+.header-links {
     position: absolute;
     top: 18px;
     right: 18px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.github-link svg,
+.stremio-addons-link svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+.github-link,
+.stremio-addons-link {
     display: grid;
     place-items: center;
     width: 34px;
@@ -65,14 +80,19 @@ body {
         color 120ms ease;
 }
 
-.github-link:hover {
+.github-link:hover,
+.stremio-addons-link:hover {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
 }
 
+.github-link:focus-visible,
+.stremio-addons-link:focus-visible {
+    outline: 2px solid #c8d2ff;
+    outline-offset: 3px;
+}
+
 .github-link svg {
-    width: 20px;
-    height: 20px;
     fill: currentColor;
 }
 
@@ -308,6 +328,28 @@ button:hover {
 }
 
 @media (max-width: 480px) {
+    .panel {
+        padding: 22px;
+    }
+
+    .header-links {
+        position: static;
+        margin-top: -4px;
+        margin-bottom: 16px;
+    }
+
+    .github-link,
+    .stremio-addons-link {
+        width: 40px;
+        height: 40px;
+    }
+
+    .github-link svg,
+    .stremio-addons-link svg {
+        width: 22px;
+        height: 22px;
+    }
+
     .manifest-row,
     .screenshot-card-small {
         grid-template-columns: 1fr;
