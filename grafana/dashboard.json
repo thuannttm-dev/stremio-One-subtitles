@@ -1676,6 +1676,48 @@
                     "refId": "A",
                     "hidden": false
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "afneof28f1reoa"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "stremio_double_subtitles_generated_subtitle_memory_cache_bytes{job=\"stremio-double-subtitles\"} / 1024 / 1024",
+                        "legendFormat": "Subtitle cache",
+                        "range": true
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "afneof28f1reoa"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "stremio_double_subtitles_generated_subtitle_memory_cache_max_bytes{job=\"stremio-double-subtitles\"} / 1024 / 1024",
+                        "legendFormat": "Subtitle cache budget",
+                        "range": true
+                      }
+                    },
+                    "refId": "C",
+                    "hidden": false
+                  }
                 }
               ],
               "transformations": [],

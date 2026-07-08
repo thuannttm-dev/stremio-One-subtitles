@@ -1,22 +1,19 @@
+const { Buffer } = require("buffer");
 const assert = require("assert");
 const {
     clearGeneratedSubtitleCacheForTests,
     getCachedGeneratedSubtitle,
+    getGeneratedSubtitleCacheStats,
     setCachedGeneratedSubtitle,
     setRedisClientForTests,
 } = require("../lib/generated-subtitle-cache");
 
 describe("generated subtitle cache", function () {
-    let previousTtl;
-
     beforeEach(function () {
-        previousTtl = process.env.GENERATED_SUBTITLE_CACHE_TTL_SECONDS;
-        process.env.GENERATED_SUBTITLE_CACHE_TTL_SECONDS = "60";
         clearGeneratedSubtitleCacheForTests();
     });
 
     afterEach(function () {
-        restoreEnv("GENERATED_SUBTITLE_CACHE_TTL_SECONDS", previousTtl);
         clearGeneratedSubtitleCacheForTests();
     });
 
@@ -66,26 +63,47 @@ describe("generated subtitle cache", function () {
             vtt: "WEBVTT\n\nfallback",
         });
     });
+
+    it("reports generated subtitle memory cache stats", async function () {
+        setRedisClientForTests(null);
+
+        await setCachedGeneratedSubtitle("abc", "WEBVTT\n\ncached");
+        const stats = getGeneratedSubtitleCacheStats();
+
+        assert.equal(stats.memoryEntryCount, 1);
+        assert.equal(stats.memoryMaxBytes, 128 * 1024 * 1024);
+        assert.equal(stats.memoryMaxEntries, 500);
+        assert.equal(stats.memoryTtlSeconds, 24 * 60 * 60);
+        assert.ok(stats.memoryCalculatedBytes > Buffer.byteLength("WEBVTT\n\ncached", "utf8"));
+    });
+
+    it("stores generated subtitles in redis for three days", async function () {
+        const client = createFakeRedisClient();
+        setRedisClientForTests(client);
+
+        await setCachedGeneratedSubtitle("abc", "WEBVTT\n\nredis");
+
+        assert.deepEqual(client.setCalls[0], {
+            key: "stremio-double-subtitles:generated-subtitle:abc",
+            options: { EX: 3 * 24 * 60 * 60 },
+            value: "WEBVTT\n\nredis",
+        });
+    });
 });
 
 function createFakeRedisClient() {
     const values = new Map();
 
-    return {
+    const client = {
+        setCalls: [],
         async get(key) {
             return values.get(key) || null;
         },
-        async set(key, value) {
+        async set(key, value, options) {
+            this.setCalls.push({ key, options, value });
             values.set(key, value);
         },
     };
-}
 
-function restoreEnv(name, value) {
-    if (value === undefined) {
-        delete process.env[name];
-        return;
-    }
-
-    process.env[name] = value;
+    return client;
 }

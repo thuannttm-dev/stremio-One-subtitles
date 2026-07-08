@@ -68,6 +68,8 @@ describe("live configured subtitle addon", function () {
 
         assert.match(metrics, /stremio_double_subtitles_http_requests_total/);
         assert.match(metrics, /stremio_double_subtitles_subtitle_lookup_total/);
+        assert.match(metrics, /stremio_double_subtitles_generated_subtitle_memory_cache_bytes/);
+        assert.match(metrics, /stremio_double_subtitles_generated_subtitle_memory_cache_max_bytes/);
     });
 
     it("metrics with a bearer token", async function () {
