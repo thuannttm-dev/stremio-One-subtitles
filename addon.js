@@ -8,7 +8,7 @@ const manifest = {
     catalogs: [],
     resources: ["subtitles"],
     types: ["movie", "series"],
-    name: "ONE SUB AI",
+    name: "GEMINI SUB AI",
     logo: "https://raw.githubusercontent.com/awerks/stremio-double-subtitles/main/assets/logo.png",
     description: "Phụ đề Vietsub AI cho Stremio",
     behaviorHints: {
