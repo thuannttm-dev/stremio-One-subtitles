@@ -3,14 +3,14 @@ const { getSubtitleOptions } = require("./subtitle-service");
 
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
-    id: "community.doublesubtitles",
+    id: "community.onesubai",
     version: "1.0.0",
     catalogs: [],
     resources: ["subtitles"],
     types: ["movie", "series"],
-    name: "Double Subtitles",
+    name: "ONE SUB AI",
     logo: "https://raw.githubusercontent.com/awerks/stremio-double-subtitles/main/assets/logo.png",
-    description: "Double subtitles for Stremio",
+    description: "Phụ đề Vietsub AI cho Stremio",
     behaviorHints: {
         configurable: true,
     },
