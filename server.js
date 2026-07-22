@@ -23,6 +23,7 @@ const CONFIGURED_ROUTER_CACHE_TTL_SECONDS = DEFAULT_CONFIGURED_ROUTER_CACHE_TTL_
 
 function createApp() {
     const app = express();
+    app.set('trust proxy', true);
     const imgDir = path.join(__dirname, "img");
     const publicDir = path.join(__dirname, "assets");
     const webDir = path.join(__dirname, "web");
