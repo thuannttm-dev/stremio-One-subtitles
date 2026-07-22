@@ -278,7 +278,7 @@ function createSubtitleOption(args, subtitle, config) {
     return {
         id: `opensubtitles-v3-${subtitle.id}-to-${config.stremioTargetLanguage}`,
         url: `${getPublicBaseUrl()}/generated-subtitles/${key}.vtt`,
-        lang: config.stremioTargetLanguage,
+        lang: config.stremioTargetLanguage || "vi",
     };
 }
 
