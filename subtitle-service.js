@@ -41,11 +41,7 @@ async function getSubtitleOptions(args) {
     });
 
     try {
-        // Ép cấu hình tìm kiếm kéo TẤT CẢ ngôn ngữ sub từ OpenSubtitles
-// 1. Tạo object extra mới và XÓA HẲN sublanguageid để kéo ALL sub từ OpenSubtitles
-        const cleanExtra = { ...(args.extra || {}) };
-        delete cleanExtra.sublanguageid; // Xóa sạch bộ lọc ngôn ngữ cũ
-
+// Ép OpenSubtitles v3 trả về sub của cả Tiếng Anh, Trung, Hàn, Đức, Nhật...
         const modifiedArgs = {
             ...args,
             config: {
@@ -53,14 +49,13 @@ async function getSubtitleOptions(args) {
                 sourceLanguage: 'all',
                 stremioSourceLanguage: 'all'
             },
-            extra: cleanExtra
+            extra: {
+                ...(args.extra || {}),
+                sublanguageid: 'eng,kor,zho,chi,deu,jpn,fre,spa'
+            }
         };
 
         const results = await searchPublicStremioOpenSubtitles(modifiedArgs);
-                ...(args.extra || {}),
-                sublanguageid: undefined // Xóa bộ lọc ngôn ngữ để lấy hết sub gốc (Đức, Hàn, Trung, Anh...)
-            }
-        };
         // 1. Danh sách ngôn ngữ ưu tiên: EN (1) -> ZH (2) -> KO (3)
         const PRIORITY_LANGS = ['en', 'eng', 'zh', 'chi', 'zh-cn', 'zh-tw', 'ko', 'kor'];
 
