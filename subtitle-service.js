@@ -42,7 +42,10 @@ async function getSubtitleOptions(args) {
 
     try {
         // Ép cấu hình tìm kiếm kéo TẤT CẢ ngôn ngữ sub từ OpenSubtitles
-// Ép cấu hình tìm kiếm kéo TẤT CẢ ngôn ngữ sub từ OpenSubtitles
+// 1. Tạo object extra mới và XÓA HẲN sublanguageid để kéo ALL sub từ OpenSubtitles
+        const cleanExtra = { ...(args.extra || {}) };
+        delete cleanExtra.sublanguageid; // Xóa sạch bộ lọc ngôn ngữ cũ
+
         const modifiedArgs = {
             ...args,
             config: {
@@ -50,7 +53,10 @@ async function getSubtitleOptions(args) {
                 sourceLanguage: 'all',
                 stremioSourceLanguage: 'all'
             },
-            extra: {
+            extra: cleanExtra
+        };
+
+        const results = await searchPublicStremioOpenSubtitles(modifiedArgs);
                 ...(args.extra || {}),
                 sublanguageid: undefined // Xóa bộ lọc ngôn ngữ để lấy hết sub gốc (Đức, Hàn, Trung, Anh...)
             }
