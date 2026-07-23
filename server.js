@@ -241,10 +241,12 @@ function decodeProviderKey(value) {
     return Buffer.from(String(value).replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
 }
 
+const app = createApp();
+
 if (require.main === module) {
     const port = Number(process.env.PORT || 53100);
     const host = getListenHost();
-    const server = createApp().listen(port, host, () => {
+    const server = app.listen(port, host, () => {
         const baseUrl = getDisplayBaseUrl(server.address().port);
         logger.info("server started", {
             host,
@@ -254,8 +256,10 @@ if (require.main === module) {
     });
 }
 
-module.exports = {
-    createApp,
-    decodeProviderKey,
-    isPrivateAddress,
-};
+// Gán thêm các hàm phụ trợ vào app (nếu nơi khác cần dùng)
+app.createApp = createApp;
+app.decodeProviderKey = decodeProviderKey;
+app.isPrivateAddress = isPrivateAddress;
+
+// Xuất trực tiếp ứng dụng app cho Vercel chạy
+module.exports = app;
