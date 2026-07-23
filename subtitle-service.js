@@ -56,10 +56,10 @@ async function getSubtitleOptions(args) {
         };
 
         const results = await searchPublicStremioOpenSubtitles(modifiedArgs);
-        // 1. Danh sách ngôn ngữ ưu tiên: EN (1) -> ZH (2) -> KO (3)
-        const PRIORITY_LANGS = ['en', 'eng', 'zh', 'chi', 'zh-cn', 'zh-tw', 'ko', 'kor'];
+        // 1. Danh sách ngôn ngữ ưu tiên
+        const PRIORITY_LANGS = ['en', 'eng', 'zh', 'chi', 'zh-cn', 'zh-tw', 'ko', 'kor', 'de', 'deu'];
 
-        // 2. Sắp xếp toàn bộ sub tìm được (results) theo bảng thứ tự ưu tiên
+        // 2. Sắp xếp toàn bộ sub tìm được theo bảng ưu tiên
         const sortedSubtitles = [...results].sort((a, b) => {
             const langA = normalizeStremioLanguage(a.lang || '').toLowerCase();
             const langB = normalizeStremioLanguage(b.lang || '').toLowerCase();
@@ -67,15 +67,17 @@ async function getSubtitleOptions(args) {
             const indexA = PRIORITY_LANGS.indexOf(langA);
             const indexB = PRIORITY_LANGS.indexOf(langB);
 
-            // Ngôn ngữ có trong bảng ưu tiên sẽ lên trước, không có thì đẩy xuống cuối
             const prioA = indexA !== -1 ? indexA : 999;
             const prioB = indexB !== -1 ? indexB : 999;
 
             return prioA - prioB;
         });
 
-        // 3. Cắt lấy đúng TOP 5 Sub gốc ngon nhất
-        const sourceLanguageSubtitles = sortedSubtitles.slice(0, 5);
+        // 3. Lấy Top 5 sub và GÁN ĐÚNG ngôn ngữ gốc của từng file sub đó!
+        const sourceLanguageSubtitles = sortedSubtitles.slice(0, 5).map(sub => ({
+            ...sub,
+            sourceLanguage: normalizeStremioLanguage(sub.lang || config.sourceLanguage)
+        }));
         recordSubtitleCandidates({
             count: results.length,
             sourceLanguage: config.sourceLanguage,
