@@ -92,7 +92,14 @@ async function getSubtitleOptions(args) {
             targetLanguage: config.targetLanguage,
             type: args.type,
         });
-        const subtitles = createSubtitleOptions(args, results, sourceLanguageSubtitles, config);
+        // Tạo options sub với sourceLanguage lấy động từ từng file sub thay vì config cố định
+        const subtitles = sourceLanguageSubtitles.flatMap(sub => {
+            const dynamicConfig = {
+                ...config,
+                sourceLanguage: sub.sourceLanguage || normalizeStremioLanguage(sub.lang || config.sourceLanguage)
+            };
+            return createSubtitleOptions(args, results, [sub], dynamicConfig);
+        });
         recordSubtitleLookup({
             sourceLanguage: config.sourceLanguage,
             status: "success",
